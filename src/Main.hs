@@ -13,6 +13,7 @@ main :: IO ()
 main = do
     conn <- checkedConnect defaultConnectInfo
     s <- getLine
+    insertSentence conn s
     print s
 
 type Wrd = String
@@ -46,6 +47,6 @@ keyToRedis conn key = runRedis conn $ do
 
 insertSentence :: Connection -> String -> IO ()
 insertSentence conn s = do
-    sequence_ $ map (keyToRedis conn) (stringToKeys s)
-    sequence_ $ map (keyToRedis conn) (stringToSumKeys s)
-
+    output <- runRedis conn $ sequence $ map incr keys
+    print output
+        where keys = map Data.ByteString.Char8.pack $ ((stringToKeys s) ++ (stringToSumKeys s))

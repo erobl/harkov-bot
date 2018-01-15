@@ -64,7 +64,8 @@ executable harkov
                        split >=0.2 && < 0.2.4,
                        hedis >= 0.10.0 && < 0.11.0,
                        transformers < 0.6.0,
-                       bytestring < 0.11
+                       bytestring < 0.11,
+                       random < 1.2
   
   -- Directories containing source files.
   hs-source-dirs:      src

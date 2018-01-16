@@ -22,19 +22,18 @@ tripletToKey (k1, k2, c) = k1 ++ ":" ++ k2 ++ ":" ++ c
 tripletToSumKey :: (Wrd, Wrd, ChatId) -> String
 tripletToSumKey (k1, _, c) = k1 ++ ":" ++ c
 
-stringToKeys :: String -> [String]
-stringToKeys s = map tripletToKey $ makeTriplet (segment s) "0"
+stringToKeys :: String -> String -> [String]
+stringToKeys s c = map tripletToKey $ makeTriplet (segment s) c
 
-stringToSumKeys :: String -> [String]
-stringToSumKeys s = map tripletToSumKey $ makeTriplet (segment s) "0"
+stringToSumKeys :: String -> String -> [String]
+stringToSumKeys s c = map tripletToSumKey $ makeTriplet (segment s) c
 
 keyToRedis :: Connection -> String -> IO ()
 keyToRedis conn key = runRedis conn $ do
                     a <- incr (pack key)                    
                     liftIO $ print a
 
-markovWrite :: Connection -> String -> IO ()
-markovWrite conn s = do
-    output <- runRedis conn $ sequence $ map incr keys
-    print output
-        where keys = map pack $ ((stringToKeys s) ++ (stringToSumKeys s))
+markovWrite :: Connection -> String -> String -> IO ()
+markovWrite conn s chat_id = do
+    runRedis conn $ sequence_ $ map incr keys
+        where keys = map pack $ ((stringToKeys s chat_id) ++ (stringToSumKeys s chat_id))

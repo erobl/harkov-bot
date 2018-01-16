@@ -42,20 +42,27 @@ getNext key = splitOn ":" key !! 1
 zipValuesMatches :: Either a [Maybe ByteString] -> Either b [ByteString] -> [(Int, ByteString)]
 zipValuesMatches values matches = zip (map resultToInt $ eitherListDefault values) (eitherListDefault matches)
 
-getNextWord :: Connection -> String -> IO (String)
-getNextWord conn s = do
+getNextWord :: Connection -> String -> String -> IO (String)
+getNextWord conn s c = do
     amount <- runRedis conn $ do
-        get (pack (s ++ ":0"))
+        get (pack (s ++ ":" ++ c))
     randomN <- randomRIO (1, resultToInt $ eitherBSDefault amount)
     runRedis conn $ do
-        matches <- keys (pack (s ++ ":*:0"))
+        matches <- keys (pack (s ++ ":*:" ++ c))
         values <- mget $ eitherListDefault matches
         return $ processKey $ pickNth (zipValuesMatches values matches) randomN
             where processKey = getNext . unpack . fromMaybe ""
-markovRead :: Connection -> String -> IO (String)
-markovRead conn word
+
+markovRead :: Connection -> String -> String -> IO (String)
+markovRead conn word chat_id
     | word == endword = return ""
     | otherwise = do
-        nextWord <- getNextWord conn word
-        restOfSentence <- markovRead conn nextWord
+        nextWord <- getNextWord conn word chat_id
+        keepReading conn chat_id nextWord
+
+keepReading :: Connection -> String -> String -> IO (String)
+keepReading conn chat_id nextWord
+    | nextWord == endword = return ""
+    | otherwise = do
+        restOfSentence <- markovRead conn nextWord chat_id
         return (nextWord ++ " " ++ restOfSentence)

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings          #-}
 module Constants (Wrd, Sentence, ChatId, startword, endword) where
 
 type Wrd = String

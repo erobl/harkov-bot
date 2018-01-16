@@ -65,7 +65,13 @@ executable harkov
                        hedis >= 0.10.0 && < 0.11.0,
                        transformers < 0.6.0,
                        bytestring < 0.11,
-                       random < 1.2
+                       random < 1.2,
+                       telegram-api >=0.7.1.0 && < 0.7.2.0,
+                       http-client,
+                       http-client-tls,
+                       mtl,
+                       text,
+                       aeson
   
   -- Directories containing source files.
   hs-source-dirs:      src

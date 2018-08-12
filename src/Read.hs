@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Read where
 
-
 import Data.List.Split
 import Database.Redis
 import Data.ByteString.Char8 (pack, unpack, ByteString)
@@ -37,7 +36,10 @@ pickNth ((m,x):xs) n
     | otherwise = Just x
 
 getNext :: String -> String
-getNext key = splitOn ":" key !! 1
+getNext key  
+    | length keys < 3 = endword
+    | otherwise = keys !! 1
+    where keys = splitOn sep key
 
 zipValuesMatches :: Either a [Maybe ByteString] -> Either b [ByteString] -> [(Int, ByteString)]
 zipValuesMatches values matches = zip (map resultToInt $ eitherListDefault values) (eitherListDefault matches)
@@ -45,10 +47,10 @@ zipValuesMatches values matches = zip (map resultToInt $ eitherListDefault value
 getNextWord :: Connection -> String -> String -> IO (String)
 getNextWord conn s c = do
     amount <- runRedis conn $ do
-        get (pack (s ++ ":" ++ c))
+        get (pack (s ++ sep ++ c))
     randomN <- randomRIO (1, resultToInt $ eitherBSDefault amount)
     runRedis conn $ do
-        matches <- keys (pack (s ++ ":*:" ++ c))
+        matches <- keys (pack (s ++ sep ++ "*" ++ sep ++ c))
         values <- mget $ eitherListDefault matches
         return $ processKey $ pickNth (zipValuesMatches values matches) randomN
             where processKey = getNext . unpack . fromMaybe ""

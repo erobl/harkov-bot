@@ -14,10 +14,11 @@ import           Data.Text.Internal        (Text)
 import           Data.Int                  (Int64)
 import           Data.Text                 (unpack, pack)
 
-token = Token "secretsecret"
+token = Token "secret"
 
 main :: IO ()
 main = do
+  putStrLn "Starting harkov..."
   conn <- checkedConnect defaultConnectInfo
   manager <- newManager tlsManagerSettings
   pollTelegram 0 manager conn
@@ -46,17 +47,21 @@ cleanMessage (Just (Message { text = t, chat = Chat { chat_id = c } })) = (t, c)
 getHeight :: (Int, Maybe Text, Int64) -> Int
 getHeight (h, _, _) = h
 
-writeUpdate :: Connection -> (Int, Maybe Text, Int64) -> IO (Maybe (Text, Int64))
+writeUpdate :: Connection -> TeleUpdate -> IO (Maybe (Text, Int64))
 writeUpdate _ (_, Nothing, _) = return Nothing
 writeUpdate conn (_, Just s, c)  
-    | s == "/markov" = do
+    | s == "/markov" || s == "/markov@hmarkov_bot" = do
         sentence <- markovRead conn startword (show c)
-        return $ Just (pack $ dropLastChar sentence, c)
+        if sentence == ""
+        then
+            return Nothing
+        else
+            return $ Just (pack $ dropLastChar sentence, c)
     | otherwise = do 
         markovWrite conn (unpack s) (show c)
         return Nothing
 
-writeUpdates :: Connection -> [(Int, Maybe Text, Int64)] -> IO [Maybe (Text, Int64)]
+writeUpdates :: Connection -> [TeleUpdate] -> IO [Maybe (Text, Int64)]
 writeUpdates conn u = sequence $ map (writeUpdate conn) u
 
 dropLastChar :: String -> String
